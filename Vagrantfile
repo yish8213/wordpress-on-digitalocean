@@ -141,6 +141,8 @@ Vagrant.configure("2") do |config|
         config.vm.provision :shell, :inline => "mv /tmp/vagrantfile-user-data /var/lib/coreos-vagrant/", :privileged => true
       end
 
+      # Install docker-compose
+      config.vm.provision "shell", path: "install-docker-compose.sh"
     end
   end
 end
