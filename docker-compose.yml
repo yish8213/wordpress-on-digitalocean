@@ -4,17 +4,20 @@ services:
     container_name: db-data
     image: busybox:latest
     volumes:
-      - ./data/var/lib/mysql:/var/lib/mysql
+      - ./data/mysql/var/lib/mysql:/var/lib/mysql
 
   mariadb:
     build: ./app/mariadb
     container_name: mariadb
     hostname: mariadb
     environment:
-     - MYSQL_ROOT_PASSWORD=temppassword
-     - MYSQL_DATABASE=db_plaintext
-     - TERM=xterm
+      - MYSQL_ROOT_PASSWORD=temppassword
+      - MYSQL_DATABASE=db_plaintext
+      - TERM=xterm
     volumes_from:
-     - db-data
-  #    volumes:
-  #     - ./dump.sql:/docker-entrypoint-initdb.d/dump.sql
+      - db-data
+    volumes:
+      - ./app/mariadb/conf.d:/etc/mysql/conf.d
+      # - ./data/mysql/dump.sql:/docker-entrypoint-initdb.d/dump.sql
+    ports:
+      - "3306:3306"
