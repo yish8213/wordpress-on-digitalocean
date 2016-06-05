@@ -2,23 +2,7 @@
 set -e
 
 if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
-	if [ -n "$MYSQL_PORT_3306_TCP" ]; then
-		if [ -z "$WORDPRESS_DB_HOST" ]; then
-			WORDPRESS_DB_HOST='mysql'
-		else
-			echo >&2 'warning: both WORDPRESS_DB_HOST and MYSQL_PORT_3306_TCP found'
-			echo >&2 "  Connecting to WORDPRESS_DB_HOST ($WORDPRESS_DB_HOST)"
-			echo >&2 '  instead of the linked mysql container'
-		fi
-	fi
-
-	if [ -z "$WORDPRESS_DB_HOST" ]; then
-		echo >&2 'error: missing WORDPRESS_DB_HOST and MYSQL_PORT_3306_TCP environment variables'
-		echo >&2 '  Did you forget to --link some_mysql_container:mysql or set an external db'
-		echo >&2 '  with -e WORDPRESS_DB_HOST=hostname:port?'
-		exit 1
-	fi
-
+	: "${WORDPRESS_DB_HOST:=mysql}"
 	# if we're linked to MySQL and thus have credentials already, let's use them
 	: ${WORDPRESS_DB_USER:=${MYSQL_ENV_MYSQL_USER:-root}}
 	if [ "$WORDPRESS_DB_USER" = 'root' ]; then
@@ -75,6 +59,7 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
 	$_SERVER['HTTPS'] = 'on';
 }
+
 EOPHP
 		chown www-data:www-data wp-config.php
 	fi
@@ -143,8 +128,11 @@ EOPHP
 	TERM=dumb php -- "$WORDPRESS_DB_HOST" "$WORDPRESS_DB_USER" "$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" <<'EOPHP'
 <?php
 // database might not exist, so let's try creating it (just to be safe)
+
 $stderr = fopen('php://stderr', 'w');
+
 list($host, $port) = explode(':', $argv[1], 2);
+
 $maxTries = 10;
 do {
 	$mysql = new mysqli($host, $argv[2], $argv[3], '', (int)$port);
@@ -157,11 +145,13 @@ do {
 		sleep(3);
 	}
 } while ($mysql->connect_error);
+
 if (!$mysql->query('CREATE DATABASE IF NOT EXISTS `' . $mysql->real_escape_string($argv[4]) . '`')) {
 	fwrite($stderr, "\n" . 'MySQL "CREATE DATABASE" Error: ' . $mysql->error . "\n");
 	$mysql->close();
 	exit(1);
 }
+
 $mysql->close();
 EOPHP
 fi

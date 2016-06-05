@@ -19,7 +19,7 @@ services:
       - db-data
     volumes:
       - ./app/mariadb/conf.d:/etc/mysql/conf.d
-      - ./data/mysql/dump.sql:/docker-entrypoint-initdb.d/dump.sql
+      # - ./data/mysql/dump.sql:/docker-entrypoint-initdb.d/dump.sql
     ports:
       - "3306:3306"
 
@@ -27,7 +27,7 @@ services:
     container_name: wordpress-data
     image: busybox:latest
     volumes:
-      - /var/www/html
+      - ./data/wordpress:/var/www/html
 
   wordpress:
     build: ./app/wordpress
@@ -50,3 +50,23 @@ services:
       - wordpress-data
     # volumes:
       # - ./data/wordpress/wordpress/wp-content:/var/www/html/wp-content
+
+  nginx:
+    image: nginx:1.11.0
+    container_name: nginx
+    hostname: nginx
+  #  depends_on:
+  #    - letsencrypt
+    depends_on:
+      - wordpress
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./app/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./app/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf
+      - ./data/wordpress:/var/www/html
+  #    - ./app/nginx/conf.d/ssl.conf:/etc/nginx/conf.d/ssl.conf
+  #   volumes_from:
+  # #    - ssl-data
+  #     - wordpress-data

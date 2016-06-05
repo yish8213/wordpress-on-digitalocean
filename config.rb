@@ -86,4 +86,4 @@ end
 #$shared_folders = {}
 
 # Enable port forwarding from guest(s) to host machine, syntax is: { 80 => 8080 }, auto correction is enabled by default.
-$forwarded_ports = { 3306 => 3306 }
+$forwarded_ports = { 3306 => 3306, 80 => 80, 443 => 443 }
